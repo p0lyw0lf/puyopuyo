@@ -1,0 +1,8 @@
+# No build files
+puyo
+Makefile
+
+# No CMake build files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
