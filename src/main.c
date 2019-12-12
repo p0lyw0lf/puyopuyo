@@ -72,7 +72,6 @@ bool loadMedia(mainVars* globals) {
 
 int refresh_screen(void* data, SDL_Event event) {
 	mainVars* globals = (mainVars*)data;
-	printf("Refreshing screen...\n");
 
 	if (globals->gamedata != NULL) {
 		if (SDL_LockMutex(globals->gamedata->mutex) != 0) {
@@ -85,6 +84,7 @@ int refresh_screen(void* data, SDL_Event event) {
 		SDL_UnlockMutex(globals->gamedata->mutex);
 	}
 
+    ACGL_gui_force_update(globals->gui);
 	ACGL_gui_render(globals->gui);
 	SDL_RenderPresent(globals->gui->renderer);
 
