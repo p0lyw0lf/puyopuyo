@@ -54,7 +54,7 @@ typedef struct {
   int chain;
 
   puyo_pair_t current_pair;
-  char current_rot_state, prev_rot_state;
+  enum PAIR_ROT_STATES current_rot_state, prev_rot_state;
   int current_x, current_y, prev_x, prev_y;
   puyo_pair_t next_pair;
   puyo_pair_t next_next_pair;

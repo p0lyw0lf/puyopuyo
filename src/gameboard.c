@@ -1,4 +1,34 @@
 #include "gameboard.h"
+#include "contracts.h"
+
+bool __gameboard_is_gb_data_t(gb_data_t* gbdata) {
+  if (gbdata == NULL) {
+    fprintf(stderr, "Error: NULL gbdata\n");
+    return false;
+  }
+
+  if (gbdata->spritesheet == NULL) {
+    fprintf(stderr, "Error: NULL gbdata->spritesheet\n");
+    return false;
+  }
+  
+  if (gbdata->clips == NULL) {
+    fprintf(stderr, "Error: NULL gbdata->clips\n");
+    return false;
+  }
+  
+  if (gbdata->board == NULL) {
+    fprintf(stderr, "Error: NULL gbdata->board\n");
+    return false;
+  }
+  
+  if (gbdata->gui == NULL) {
+    fprintf(stderr, "Error: NULL gbdata->gui\n");
+    return false;
+  }
+
+  return true;
+}
 
 gb_data_t* gameboard_load_media(ACGL_gui_t* gui, puyo_board_t* board) {
   if (gui == NULL) {
@@ -38,10 +68,12 @@ gb_data_t* gameboard_load_media(ACGL_gui_t* gui, puyo_board_t* board) {
 
   gameboard_contruct_gui(gbdata);
 
+  ENSURES(__gameboard_is_gb_data_t(gbdata));
   return gbdata;
 }
 
 bool color_rectangle_callback(SDL_Renderer* renderer, SDL_Rect location, void* data) {
+  REQUIRES(data != NULL);
   SDL_Color old_color, *new_color;
   new_color = (SDL_Color*)data;
   if (SDL_GetRenderDrawColor(renderer, &old_color.r, &old_color.g, &old_color.b, &old_color.a) != 0) {
@@ -81,10 +113,7 @@ void gameboard_contruct_gui(gb_data_t* gbdata) {
   //ACGL_gui_node_remove_all_children(gbdata->gui->root);
 
 
-  // wow 4 bytes leaked soo scaary
-  SDL_Color* green = (SDL_Color*)malloc(sizeof(SDL_Color));
-  green->r = 0; green->g = 255; green->b = 0; green->a = 255;
-  ACGL_gui_object_t* board_base = ACGL_gui_node_init(renderer, &color_rectangle_callback, (void*)green);
+  ACGL_gui_object_t* board_base = ACGL_gui_node_init(renderer, &gameboard_render, (void*)gbdata);
   if (board_base == NULL) {
     fprintf(stderr, "Error: could not create board gui node!\n");
     return;
@@ -117,6 +146,7 @@ void gameboard_contruct_gui(gb_data_t* gbdata) {
 }
 
 void gameboard_destroy(gb_data_t* gbdata) {
+  REQUIRES(gbdata != NULL);
   if (gbdata->spritesheet != NULL) {
     SDL_DestroyTexture(gbdata->spritesheet);
     gbdata->spritesheet = NULL;
@@ -136,95 +166,57 @@ void gameboard_destroy(gb_data_t* gbdata) {
   free(gbdata);
 }
 
-bool gameboard_puyo_render(SDL_Renderer* renderer, SDL_Rect location, void* data) {
-  gb_pos_data_t* gbdata = (gb_pos_data_t*)data;
-  bool did_render = true;
-
-  enum PUYO_COLOR_IDS puyo_color = gbdata->board->area[ gbdata->x * PUYO_HEIGHT_ACT + gbdata->y ];
-  if (puyo_color == PUYO_COLOR_1 || puyo_color == PUYO_COLOR_2 || puyo_color == PUYO_COLOR_3 || puyo_color == PUYO_COLOR_4) {
-    int puyo_id = gbdata->board->color_to_sprite[puyo_color];
-    // make connections with surrounding puyos
-    if (gbdata->x > 0 && gbdata->board->area[ ( gbdata->x - 1 ) * PUYO_HEIGHT_ACT + gbdata->y ] == puyo_color) {
-      puyo_id += PUYO_LEFT;
-    }
-    if (gbdata->x < PUYO_WIDTH-1 && gbdata->board->area[ ( gbdata->x + 1 ) * PUYO_HEIGHT_ACT + gbdata->y ] == puyo_color) {
-      puyo_id += PUYO_RIGHT;
-    }
-    if (gbdata->y > 0 && gbdata->board->area[ gbdata->x * PUYO_HEIGHT_ACT + gbdata->y - 1 ] == puyo_color) {
-      puyo_id += PUYO_DOWN;
-    }
-    if (gbdata->y < PUYO_HEIGHT_ACT-1 && gbdata->board->area[ gbdata->x * PUYO_HEIGHT_ACT + gbdata->y + 1 ] == puyo_color) {
-      puyo_id += PUYO_UP;
-    }
-    // and then render
-    ss_render(renderer, gbdata->spritesheet, gbdata->clips, &location, puyo_id);
-  } else if (puyo_color == PUYO_COLOR_GARBAGE) {
-    ss_render(renderer, gbdata->spritesheet, gbdata->clips, &location, PUYO_GARBAGE_BLOB);
-  } else {
-    did_render = false;
-  }
-
-  return did_render;
-}
-
 bool gameboard_background_render(SDL_Renderer* renderer, SDL_Rect location, void* data) {
   // I need to find a suitable background first lol
-  return false;
+  SDL_Color* green = (SDL_Color*)malloc(sizeof(SDL_Color));
+  green->r = 0; green->g = 255; green->b = 0; green->a = 255;
+  color_rectangle_callback(renderer, location, green);
+  free(green);
+  return true;
 }
 
-void gameboard_render(SDL_Renderer* renderer, SDL_Rect* location, puyo_board_t* board, SDL_Texture* spritesheet, SDL_Rect* clips) {
-  if (SDL_LockMutex(board->mutex) != 0) {
-    fprintf(stderr, "Could not lock mutex in gameboard_render! SDL Error: %s\n", SDL_GetError());
-  }
+void gameboard_render_board(SDL_Renderer* renderer, SDL_Rect location, gb_data_t* gbdata) {
+  REQUIRES(renderer != NULL);
+  REQUIRES(gbdata != NULL);
 
-  SDL_UnlockMutex(board->mutex);
-}
+  printf("x: %d y: %d, w: %d h: %d\n", location.x, location.y, location.w, location.h);
 
-void gameboard_render_board(SDL_Renderer* renderer, SDL_Rect* location, puyo_board_t* board, SDL_Texture* spritesheet, SDL_Rect* clips) {
-  int col_width = location->w / PUYO_WIDTH;
-  int row_height = location->h / PUYO_HEIGHT;
-  if (board->board_has_changed) {
-    // clear the entire board, placing sprites as we go
-    SDL_Rect rect;
-    rect.w = col_width;
-    rect.h = row_height;
-    for (int y=0; y<PUYO_HEIGHT; y++) {
-      rect.y = location->y + location->h - (y+1)*row_height; // board is drawn bottom up
-      for (int x=0; x<PUYO_WIDTH; x++) {
-        rect.x = location->x + x*col_width;
+  int col_width = location.w / PUYO_WIDTH;
+  int row_height = location.h / PUYO_HEIGHT;
+  puyo_board_t* board = gbdata->board;
 
-        // first, draw the background
-        SDL_RenderFillRect(renderer, &rect); // TODO: replace w/ actual background
+  // Board background has already been drawn, place existing puyos on top
+  SDL_Rect rect;
+  rect.w = col_width;
+  rect.h = row_height;
+  for (int y=0; y<PUYO_HEIGHT; y++) {
+    rect.y = location.y + location.h - (y+1)*row_height; // board is drawn bottom up
+    for (int x=0; x<PUYO_WIDTH; x++) {
+      rect.x = location.x + x*col_width;
 
-        enum PUYO_COLOR_IDS puyo_color = board->area[x*PUYO_HEIGHT_ACT+y];
-        if (puyo_color == PUYO_COLOR_1 || puyo_color == PUYO_COLOR_2 || puyo_color == PUYO_COLOR_3 || puyo_color == PUYO_COLOR_4) {
-          int puyo_id = board->color_to_sprite[puyo_color];
-          // make connections with surrounding puyos
-          if (x > 0 && board->area[(x-1)*PUYO_HEIGHT_ACT+y] == puyo_color) {
-            puyo_id += PUYO_LEFT;
-          }
-          if (x < PUYO_WIDTH-1 && board->area[(x+1)*PUYO_HEIGHT_ACT+y] == puyo_color) {
-            puyo_id += PUYO_RIGHT;
-          }
-          if (y > 0 && board->area[x*PUYO_HEIGHT_ACT+y-1] == puyo_color) {
-            puyo_id += PUYO_DOWN;
-          }
-          if (y < PUYO_HEIGHT_ACT-1 && board->area[x*PUYO_HEIGHT_ACT+y+1] == puyo_color) {
-            puyo_id += PUYO_UP;
-          }
-          // and then render
-          ss_render(renderer, spritesheet, clips, &rect, puyo_id);
-        } else if (puyo_color == PUYO_COLOR_GARBAGE) {
-          ss_render(renderer, spritesheet, clips, &rect, PUYO_GARBAGE_BLOB);
+
+      enum PUYO_COLOR_IDS puyo_color = board->area[x*PUYO_HEIGHT_ACT+y];
+      if (puyo_color == PUYO_COLOR_1 || puyo_color == PUYO_COLOR_2 || puyo_color == PUYO_COLOR_3 || puyo_color == PUYO_COLOR_4) {
+        int puyo_id = board->color_to_sprite[puyo_color];
+        // make connections with surrounding puyos
+        if (x > 0 && board->area[(x-1)*PUYO_HEIGHT_ACT+y] == puyo_color) {
+          puyo_id += PUYO_LEFT;
         }
+        if (x < PUYO_WIDTH-1 && board->area[(x+1)*PUYO_HEIGHT_ACT+y] == puyo_color) {
+          puyo_id += PUYO_RIGHT;
+        }
+        if (y > 0 && board->area[x*PUYO_HEIGHT_ACT+y-1] == puyo_color) {
+          puyo_id += PUYO_DOWN;
+        }
+        if (y < PUYO_HEIGHT_ACT-1 && board->area[x*PUYO_HEIGHT_ACT+y+1] == puyo_color) {
+          puyo_id += PUYO_UP;
+        }
+        // and then render
+        ss_render(renderer, gbdata->spritesheet, gbdata->clips, &rect, puyo_id);
+      } else if (puyo_color == PUYO_COLOR_GARBAGE) {
+        ss_render(renderer, gbdata->spritesheet, gbdata->clips, &rect, PUYO_GARBAGE_BLOB);
       }
     }
-
-    // finally, update the pairs (since we cleared them accidentally)
-    board->pairs_have_changed = true;
-    // but don't redraw entire board next time
-    board->board_has_changed = false;
-    // SDL_RenderPresent(renderer); // don't do this, other part will call instead
   }
 }
 
@@ -312,4 +304,21 @@ void gameboard_render_upcoming(SDL_Renderer* renderer, SDL_Rect* location, puyo_
     board->pairs_have_changed = false;
     SDL_RenderPresent(renderer);
   }
+}
+
+bool gameboard_render(SDL_Renderer* renderer, SDL_Rect location, void* data) {
+  REQUIRES(renderer != NULL);
+  REQUIRES(data != NULL);
+
+  gb_data_t* gbdata = (gb_data_t*)data;
+
+  if (SDL_LockMutex(gbdata->board->mutex) != 0) {
+    fprintf(stderr, "Could not lock mutex in gameboard_render! SDL Error: %s\n", SDL_GetError());
+  }
+
+  gameboard_background_render(renderer, location, gbdata);
+  gameboard_render_board(renderer, location, gbdata);
+
+  SDL_UnlockMutex(gbdata->board->mutex);
+  return true;
 }
