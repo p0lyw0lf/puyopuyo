@@ -5,11 +5,12 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include "puyo.h"
+#include "ipc.h"
 
 typedef struct {
+  SDL_mutex* mutex;
   puyo_board_t* board;
   bool quit;
-  SDL_mutex* mutex;
 } runnerData;
 
 extern int runner_mainloop(void* data); // expects a pointer to runnerData, but SDL needs this format for threading function

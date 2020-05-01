@@ -16,9 +16,16 @@ int runner_mainloop(void* data) {
       break;
     }
     grdata->board->score += puyo_pop_chain(grdata->board);
-    grdata->board->board_has_changed = true;
 
     SDL_UnlockMutex(grdata->board->mutex);
+
+    SDL_Event event;
+    SDL_zero(event);
+    event.type = SDL_USEREVENT;
+    event.user.code = REFRESH_REQUEST;
+    event.user.data1 = NULL;
+    event.user.data2 = NULL;
+    SDL_PushEvent(&event);
 
     SDL_Delay(1000);
   }

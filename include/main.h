@@ -10,6 +10,7 @@
 #include "gameboard.h"
 #include "runner.h"
 #include "spritesheet.h"
+#include "ipc.h"
 
 #define SCREEN_WIDTH 400
 #define SCREEN_HEIGHT 600

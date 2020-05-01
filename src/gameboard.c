@@ -129,6 +129,7 @@ void gameboard_contruct_gui(gb_data_t* gbdata) {
   board_base->max_w = 500;
 
   ACGL_gui_node_add_child_front(gbdata->gui->root, board_base);
+  gbdata->board->board_object = board_base;
 
   // wow 4 bytes leaked soo scaary
   SDL_Color* blue = (SDL_Color*)malloc(sizeof(SDL_Color));
@@ -141,7 +142,7 @@ void gameboard_contruct_gui(gb_data_t* gbdata) {
     return;
   }
 
-  // defaul settings are enough for the background
+  // default settings are enough for the background
   ACGL_gui_node_add_child_back(gbdata->gui->root, background);
 }
 
@@ -189,11 +190,10 @@ void gameboard_render_board(SDL_Renderer* renderer, SDL_Rect location, gb_data_t
   SDL_Rect rect;
   rect.w = col_width;
   rect.h = row_height;
-  for (int y=0; y<PUYO_HEIGHT; y++) {
+  for (char y=0; y<PUYO_HEIGHT; y++) {
     rect.y = location.y + location.h - (y+1)*row_height; // board is drawn bottom up
-    for (int x=0; x<PUYO_WIDTH; x++) {
+    for (char x=0; x<PUYO_WIDTH; x++) {
       rect.x = location.x + x*col_width;
-
 
       enum PUYO_COLOR_IDS puyo_color = board->area[x*PUYO_HEIGHT_ACT+y];
       if (puyo_color == PUYO_COLOR_1 || puyo_color == PUYO_COLOR_2 || puyo_color == PUYO_COLOR_3 || puyo_color == PUYO_COLOR_4) {

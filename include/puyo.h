@@ -8,13 +8,14 @@
 #include <stdio.h>
 #include <time.h>
 
+#include <acgl/gui.h>
 #include "spritesheet.h"
 
 #define PUYO_WIDTH 6
 #define PUYO_HEIGHT 12
-#define PUYO_HEIGHT_HIDDEN 1
+#define PUYO_HEIGHT_HIDDEN 2
 #define PUYO_HEIGHT_ACT PUYO_HEIGHT + PUYO_HEIGHT_HIDDEN
-#define PUYO_MAX_CHAIN 21
+#define PUYO_MAX_CHAIN 15
 
 enum PAIR_ROT_STATES {
   ROT_DOWN,   //    0
@@ -66,6 +67,11 @@ typedef struct {
   // A mutex for the object
   SDL_mutex* mutex;
 
+  // I was trying to avoid putting graphics stuff in here,
+  // but I think these are necessary.
+  ACGL_gui_object_t* board_object;
+  ACGL_gui_object_t* pairs_object;
+
   int color_to_sprite[PUYO_NUM_COLORS];
 } puyo_board_t;
 
@@ -93,6 +99,12 @@ extern bool puyo_apply_gravity(puyo_board_t* board);
 // Applies garbage to the board. Returns true if this would make the
 // player top out.
 extern bool puyo_apply_garbage(puyo_board_t* board);
+
+// Marks a board has been changed. Returns false if there was an error.
+extern bool puyo_mark_board_changed(puyo_board_t* board);
+
+// Marks that the pairs have changed and need to re-render. Returns false on error
+extern bool puyo_mark_pairs_changed(puyo_board_t* board);
 
 // Correctly frees from memory a puyo_board_t*
 extern void puyo_free_board(puyo_board_t* board);

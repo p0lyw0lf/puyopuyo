@@ -84,7 +84,7 @@ int refresh_screen(void* data, SDL_Event event) {
 		SDL_UnlockMutex(globals->gamedata->mutex);
 	}
 
-    ACGL_gui_force_update(globals->gui);
+  ACGL_gui_force_update(globals->gui);
 	ACGL_gui_render(globals->gui);
 	SDL_RenderPresent(globals->gui->renderer);
 
@@ -94,9 +94,7 @@ int refresh_screen(void* data, SDL_Event event) {
 int main_quit(void* data, SDL_Event event) {
 	mainVars* globals = (mainVars*)data;
 
-	if (event.type == SDL_KEYDOWN) {
-		globals->run = false;
-	}
+	globals->run = false;
 
 	return 0;
 }
@@ -123,8 +121,7 @@ void main_close(mainVars* globals) {
 int mainloop(mainVars* globals) {
 	SDL_Event e;
 
-	/*
-	globals->gamedata = runner_create();
+	globals->gamedata = runner_create(globals->board);
 
 	globals->gamethread = SDL_CreateThread(
 		&runner_mainloop,
@@ -135,40 +132,48 @@ int mainloop(mainVars* globals) {
 		fprintf(stderr, "Could not create background thread! SDL Error: %s\n", SDL_GetError());
 		return 1;
 	}
-	SDL_DetachThread(globals->gamethread);*/
+	SDL_DetachThread(globals->gamethread);
 
 
-	while (globals->run) {
-		while (SDL_PollEvent(&e) != 0) {
-			switch (e.type) {
-				case SDL_QUIT:
-					globals->run = false;
-					break;
-				case SDL_WINDOWEVENT:
-					ACGL_ih_handle_windowevent(e, globals->medata);
-					break;
-				case SDL_KEYUP:
-				case SDL_KEYDOWN:
-				    fprintf(stderr, "key pressed\n");
-					ACGL_ih_handle_keyevent(e, globals->keybinds, globals->medata);
-					break;
-				default:
-					break;
-			}
-		}
+  while (globals->run && SDL_WaitEvent(&e) != 0) {
+    switch (e.type) {
+      case SDL_QUIT:
+        globals->run = false;
+        break;
+      case SDL_WINDOWEVENT:
+        ACGL_ih_handle_windowevent(e, globals->medata);
+        break;
+      case SDL_KEYUP:
+      case SDL_KEYDOWN:
+        fprintf(stderr, "key pressed\n");
+        ACGL_ih_handle_keyevent(e, globals->keybinds, globals->medata);
+        break;
+      case SDL_USEREVENT:
+        switch (e.user.code) {
+          case REFRESH_REQUEST:
+            printf("Got refresh event\n");
+            ACGL_gui_render(globals->gui);
+	          SDL_RenderPresent(globals->gui->renderer);
+            break;
+          default:
+            break;
+        }
+        break;
+      default:
+        break;
+    }
+  }
 
-		ACGL_gui_render(globals->gui);
-	}
 
 	int to_return = 0;
-/*
+	
 	if (runner_stop_thread(globals->gamethread, globals->gamedata) != 0) {
 		fprintf(stderr, "Error stoping game thread! See above for more details\n");
 		to_return = 1;
 	}
 
 	runner_destroy(globals->gamedata);
-	globals->gamedata = NULL;*/
+	globals->gamedata = NULL;
 
 	return to_return;
 }
