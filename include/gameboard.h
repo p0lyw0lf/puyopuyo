@@ -6,13 +6,14 @@
 #include "puyo.h"
 #include "spritesheet.h"
 
-typedef struct {
+typedef struct gb_data gb_data_t;
+struct gb_data {
   SDL_Texture* spritesheet;
   SDL_Rect* clips;
   puyo_board_t* board;
 
   ACGL_gui_t* gui;
-} gb_data_t;
+};
 
 
 extern gb_data_t* gameboard_load_media(ACGL_gui_t* gui, puyo_board_t* board);
