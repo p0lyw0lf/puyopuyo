@@ -180,8 +180,6 @@ void gameboard_render_board(SDL_Renderer* renderer, SDL_Rect location, gb_data_t
   REQUIRES(renderer != NULL);
   REQUIRES(gbdata != NULL);
 
-  printf("x: %d y: %d, w: %d h: %d\n", location.x, location.y, location.w, location.h);
-
   int col_width = location.w / PUYO_WIDTH;
   int row_height = location.h / PUYO_HEIGHT;
   puyo_board_t* board = gbdata->board;
@@ -195,7 +193,7 @@ void gameboard_render_board(SDL_Renderer* renderer, SDL_Rect location, gb_data_t
     for (char x=0; x<PUYO_WIDTH; x++) {
       rect.x = location.x + x*col_width;
 
-      enum PUYO_COLOR_IDS puyo_color = board->area[x*PUYO_HEIGHT_ACT+y];
+      puyo_t puyo_color = board->area[x*PUYO_HEIGHT_ACT+y];
       if (puyo_color == PUYO_COLOR_1 || puyo_color == PUYO_COLOR_2 || puyo_color == PUYO_COLOR_3 || puyo_color == PUYO_COLOR_4) {
         int puyo_id = board->color_to_sprite[puyo_color];
         // make connections with surrounding puyos

@@ -10,6 +10,8 @@ SDL_Texture* ss_load(SDL_Renderer* renderer) {
 	SDL_RWops* buffer_rwop = SDL_RWFromMem((void*)spritesheet_buf, 
 	        spritesheet_buf_length);
 	SDL_Surface* image = IMG_LoadPNG_RW(buffer_rwop);
+	SDL_RWclose(buffer_rwop);
+	
 	if (image == NULL) {
 		fprintf(stderr, "IMG_LoadPNG_RW Failed, Error: %s\n", IMG_GetError());
 		return NULL;
