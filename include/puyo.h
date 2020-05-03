@@ -14,7 +14,7 @@
 #define PUYO_WIDTH 6
 #define PUYO_HEIGHT 12
 #define PUYO_HEIGHT_HIDDEN 2
-#define PUYO_HEIGHT_ACT PUYO_HEIGHT + PUYO_HEIGHT_HIDDEN
+#define PUYO_HEIGHT_ACT ((PUYO_HEIGHT) + (PUYO_HEIGHT_HIDDEN))
 #define PUYO_MAX_CHAIN 15
 #define PUYO_MAX_GROUP 11
 #define PUYO_GROUP_POP 4
@@ -41,7 +41,7 @@ enum PUYO_COLOR_IDS {
   PUYO_TOTAL_COLOR_IDS,
 };
 
-typedef uint8_t puyo_t;
+typedef enum PUYO_COLOR_IDS puyo_t;
 typedef uint32_t score_t;
 typedef struct puyo_pair puyo_pair_t;
 struct puyo_pair {

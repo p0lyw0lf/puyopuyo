@@ -1,20 +1,8 @@
-#cmake_minimum_required(VERSION 3.11)
+cmake_minimum_required(VERSION 3.7)
+
 set(PROJECT_NAME "puyo")
 if (NOT DEFINED CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE RELWITHDEBINFO)
-endif()
-set(PUYO_BUILD_STATIC YES)
-if (DEFINED PUYO_BUILD_STATIC)
-    set(BUILD_SHARED_LIBS OFF)
-    if (UNIX)
-        set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
-        set(CMAKE_EXE_LINKER_FLAGS "-static")
-    endif (UNIX)
-
-    #[[ if (MSVC)
-        target_compile_options(puyo PUBLIC/PRIVATE /MT)
-        target_compile_options(puyo PUBLIC/PRIVATE  /INCREMENTAL:NO /NODEFAULTLIB:MSVCRT)
-    endif (MSVC) ]]
+  set(CMAKE_BUILD_TYPE DEBUG)
 endif()
 project(${PROJECT_NAME})
 
@@ -44,7 +32,7 @@ add_subdirectory(ACGL)
 
 add_executable(${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES})
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)
-target_link_libraries(${PROJECT_NAME} PRIVATE acgl SDL2::SDL2main SDL2::SDL2-static SDL2::SDL2_image)
+target_link_libraries(${PROJECT_NAME} PRIVATE acgl SDL2::SDL2main SDL2::SDL2 SDL2::SDL2_image)
 if ((NOT DEFINED PUYO_BUILD_STATIC) AND WIN32 AND (NOT MSVC))
     configure_file(ACGL/libacgl.dll libacgl.dll COPYONLY)
 endif()

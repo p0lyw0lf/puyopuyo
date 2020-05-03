@@ -56,7 +56,8 @@ const score_t PUYO_GROUP_MULTIPLIERS[PUYO_MAX_GROUP + 1] = {
 };
 
 puyo_board_t* puyo_create_board() {
-  srand(time(NULL));
+  // Seed random number generator
+  srand((unsigned)time(NULL));
 
   puyo_board_t* board = (puyo_board_t*)malloc(sizeof(puyo_board_t));
   board->mutex = SDL_CreateMutex();
@@ -66,8 +67,8 @@ puyo_board_t* puyo_create_board() {
     return NULL;
   }
   board->area = (puyo_t*)malloc(sizeof(puyo_t) * (PUYO_WIDTH*PUYO_HEIGHT_ACT));
-  for (int x=0; x<PUYO_WIDTH; x++) {
-    for (int y=0; y<PUYO_HEIGHT_ACT; y++) {
+  for (char x=0; x<PUYO_WIDTH; x++) {
+    for (char y=0; y<PUYO_HEIGHT_ACT; y++) {
       board->area[x*PUYO_HEIGHT_ACT+y] = PUYO_COLOR_NONE;
     }
   }
@@ -172,14 +173,14 @@ puyo_pair_t puyo_get_random_pair() {
 }
 
 Uint8 __puyo_count_group_size(puyo_board_t* board, char x, char y, bool* marked) {
-  Uint8 count = 0;
+  Uint8 count = 1;
   int index = x * PUYO_HEIGHT_ACT + y;
   if (marked[index]) {
     // We've been here already
     return 0;
   }
   marked[index] = true;
-  enum PUYO_COLOR_IDS puyo_color = board->area[index];
+  puyo_t puyo_color = board->area[index];
   if (!(puyo_color == PUYO_COLOR_1 || puyo_color == PUYO_COLOR_2 || puyo_color == PUYO_COLOR_3 || puyo_color == PUYO_COLOR_4)) {
     return 0;
   }
@@ -211,27 +212,54 @@ void __puyo_group_popping(puyo_board_t* board, char x, char y, bool* marked, boo
   marked[index] = true;
   popping[index] = true;
 
-  enum PUYO_COLOR_IDS puyo_color = board->area[index];
-  if (x > 0 && board->area[(x - 1) * PUYO_HEIGHT_ACT + y] == puyo_color) {
-    // expand left
-    __puyo_group_popping(board, x - 1, y, marked, popping);
+  puyo_t puyo_color = board->area[index];
+  if (x > 0) {
+    int left_index = (x - 1) * PUYO_HEIGHT_ACT + y;
+    puyo_t left = board->area[left_index];
+    if (left == puyo_color) {
+      // expand left
+      __puyo_group_popping(board, x - 1, y, marked, popping);
+    }
+    else if (left == PUYO_COLOR_GARBAGE) {
+      popping[left_index] = true;
+    }
   }
-  if (x < PUYO_WIDTH - 1 && board->area[(x + 1) * PUYO_HEIGHT_ACT + y] == puyo_color) {
-    // expand right
-    __puyo_group_popping(board, x + 1, y, marked, popping);
+  if (x < PUYO_WIDTH - 1) {
+    int right_index = (x + 1) * PUYO_HEIGHT_ACT + y;
+    puyo_t right = board->area[right_index];
+    if (right == puyo_color) {
+      // expand right
+      __puyo_group_popping(board, x + 1, y, marked, popping);
+    }
+    else if (right == PUYO_COLOR_GARBAGE) {
+      popping[right_index] = true;
+    }
   }
-  if (y > 0 && board->area[x * PUYO_HEIGHT_ACT + y - 1] == puyo_color) {
-    // expand down
-    __puyo_group_popping(board, x, y - 1, marked, popping);
+  if (y > 0) {
+    int down_index = x * PUYO_HEIGHT_ACT + y - 1;
+    puyo_t down = board->area[down_index];
+    if (down == puyo_color) {
+      // expand down
+      __puyo_group_popping(board, x, y - 1, marked, popping);
+    }
+    else if (down == PUYO_COLOR_GARBAGE) {
+      popping[down_index] = true;
+    }
   }
-  if (y < PUYO_HEIGHT_ACT - 1 && board->area[x * PUYO_HEIGHT_ACT + y + 1] == puyo_color) {
-    // expand up
-    __puyo_group_popping(board, x, y + 1, marked, popping);
+  if (y < PUYO_HEIGHT - 1) {
+    int up_index = x * PUYO_HEIGHT_ACT + y + 1;
+    puyo_t up = board->area[up_index];
+    if (up == puyo_color) {
+      // expand up
+      __puyo_group_popping(board, x, y + 1, marked, popping);
+    }
+    else if (up == PUYO_COLOR_GARBAGE) {
+      popping[up_index] = true;
+    }
   }
 }
 
 score_t puyo_pop_chain(puyo_board_t* board) {
-  // TODO: change to a function that actually does something useful.
   if (board == NULL) {
     return 0;
   } 
@@ -240,9 +268,11 @@ score_t puyo_pop_chain(puyo_board_t* board) {
   SDL_zero(marked);
   Uint8 group_sizes[PUYO_WIDTH * PUYO_HEIGHT];
 
+  printf("here at least\n");
+
   for (char y = 0; y < PUYO_HEIGHT; y++) {
     for (char x = 0; x < PUYO_WIDTH; x++) {
-      group_sizes[x * PUYO_HEIGHT + y] = __puyo_count_group_size(board, x, y, marked);
+      group_sizes[x * PUYO_HEIGHT + y] = __puyo_count_group_size(board, x, y, marked);;
     }
   }
 
@@ -262,7 +292,8 @@ score_t puyo_pop_chain(puyo_board_t* board) {
         
         puyo_cleared += group_size;
         groups_cleared += 1;
-        enum PUYO_COLOR_IDS puyo_color = board->area[x * PUYO_HEIGHT_ACT + y];
+        puyo_t puyo_color = board->area[x * PUYO_HEIGHT_ACT + y];
+        printf("Popping group of %d puyos, color %d\n", group_size, puyo_color);
         assert(0 <= puyo_color && puyo_color < PUYO_NUM_COLORS);
         color_cleared[puyo_color] = true;
       }
@@ -281,7 +312,6 @@ score_t puyo_pop_chain(puyo_board_t* board) {
   score_t chain_bonus = PUYO_CHAIN_MULTIPLIERS[1];
 
   score_t final_score = (10 * (score_t)puyo_cleared) * (color_bonus + group_bonus + chain_bonus);
-
 
   return final_score;
 }

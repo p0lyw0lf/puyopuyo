@@ -100,7 +100,6 @@ int main_quit(void* data, SDL_Event event) {
 }
 
 void main_close(mainVars* globals) {
-
 	ACGL_ih_deinit_keybinds(globals->keybinds);
 	globals->keybinds = NULL;
 	ACGL_ih_deinit_eventdata(globals->medata);
@@ -113,6 +112,13 @@ void main_close(mainVars* globals) {
 	globals->renderer = NULL;
 	SDL_DestroyWindow(globals->window);
 	globals->window = NULL;
+
+  puyo_free_board(globals->board);
+  globals->board = NULL;
+  // Might want to split out next section into an unloadMedia method?
+  gameboard_destroy(globals->boarddata);
+  globals->boarddata = NULL;
+  
 
 	IMG_Quit();
 	SDL_Quit();
@@ -151,7 +157,6 @@ int mainloop(mainVars* globals) {
       case SDL_USEREVENT:
         switch (e.user.code) {
           case REFRESH_REQUEST:
-            printf("Got refresh event\n");
             ACGL_gui_render(globals->gui);
 	          SDL_RenderPresent(globals->gui->renderer);
             break;
