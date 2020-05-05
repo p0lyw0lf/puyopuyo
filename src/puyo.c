@@ -67,23 +67,42 @@ puyo_board_t* puyo_create_board() {
     return NULL;
   }
   board->area = (puyo_t*)malloc(sizeof(puyo_t) * (PUYO_WIDTH*PUYO_HEIGHT_ACT));
+  if (board->area == NULL) {
+    fprintf(stderr, "Could not create board area!\n");
+    SDL_DestroyMutex(board->mutex);
+    free(board);
+    return NULL;
+  }
   for (char x=0; x<PUYO_WIDTH; x++) {
     for (char y=0; y<PUYO_HEIGHT_ACT; y++) {
       board->area[x*PUYO_HEIGHT_ACT+y] = PUYO_COLOR_NONE;
     }
   }
-  board->prev_area = NULL;
+  board->popping_area = (bool*)malloc(sizeof(bool) * (PUYO_WIDTH * PUYO_HEIGHT_ACT));
+  if (board->popping_area == NULL) {
+    fprintf(stderr, "Could not create board popping buffer!\n");
+    SDL_DestroyMutex(board->mutex);
+    free(board->area);
+    free(board);
+    return NULL;
+  }
+
   board->score = 0;
   board->incoming_garbage = 0;
   board->chain = 0;
 
   board->current_pair = puyo_get_random_pair();
-  board->current_rot_state = ROT_DOWN;
-  board->current_x = 3;
-  board->current_y = PUYO_HEIGHT;
+  board->rot_state = ROT_DOWN;
+  board->puyo1_x = 3;
+  board->puyo1_y = PUYO_HEIGHT;
+  board->puyo2_x = 3;
+  board->puyo2_y = PUYO_HEIGHT - 1;
 
   board->next_pair = puyo_get_random_pair();
   board->next_next_pair = puyo_get_random_pair();
+
+  board->is_popping = false;
+  board->popping_counter = 0;
 
   board->board_has_changed = true;
   board->pairs_have_changed = true;
@@ -130,7 +149,7 @@ bool puyo_mark_pairs_changed(puyo_board_t* board) {
 
   if (board->pairs_object != NULL) {
     if (SDL_LockMutex(board->pairs_object->mutex) != 0) {
-      fprintf(stderr, "Could not lock ACGL mutex in puyo_mark_board_changed! SDL_Error %s\n", SDL_GetError());
+      fprintf(stderr, "Could not lock ACGL mutex in puyo_mark_pairs_changed! SDL_Error %s\n", SDL_GetError());
       return false;
     }
     board->pairs_object->needs_update = true;
@@ -140,14 +159,15 @@ bool puyo_mark_pairs_changed(puyo_board_t* board) {
   return true;
 }
 void puyo_free_board(puyo_board_t* board) {
+  // REQUIRES: no thread contention, because this destroys the mutex
   if (board != NULL) {
     if (board->area != NULL) {
       free(board->area);
       board->area = NULL;
     }
-    if (board->prev_area != NULL) {
-      free(board->prev_area);
-      board->prev_area = NULL;
+    if (board->popping_area != NULL) {
+      free(board->popping_area);
+      board->popping_area = NULL;
     }
     if (board->mutex != NULL) {
       SDL_DestroyMutex(board->mutex);
@@ -172,6 +192,10 @@ puyo_pair_t puyo_get_random_pair() {
   return pair;
 }
 
+inline bool is_playable_puyo(puyo_t puyo_color) {
+  return (puyo_color == PUYO_COLOR_1 || puyo_color == PUYO_COLOR_2 || puyo_color == PUYO_COLOR_3 || puyo_color == PUYO_COLOR_4);
+}
+
 Uint8 __puyo_count_group_size(puyo_board_t* board, char x, char y, bool* marked) {
   Uint8 count = 1;
   int index = x * PUYO_HEIGHT_ACT + y;
@@ -181,7 +205,7 @@ Uint8 __puyo_count_group_size(puyo_board_t* board, char x, char y, bool* marked)
   }
   marked[index] = true;
   puyo_t puyo_color = board->area[index];
-  if (!(puyo_color == PUYO_COLOR_1 || puyo_color == PUYO_COLOR_2 || puyo_color == PUYO_COLOR_3 || puyo_color == PUYO_COLOR_4)) {
+  if (!is_playable_puyo(puyo_color)) {
     return 0;
   }
   if (x > 0 && board->area[(x - 1) * PUYO_HEIGHT_ACT + y] == puyo_color) {
@@ -203,14 +227,14 @@ Uint8 __puyo_count_group_size(puyo_board_t* board, char x, char y, bool* marked)
   return count;
 }
 
-void __puyo_group_popping(puyo_board_t* board, char x, char y, bool* marked, bool* popping) {
+void __puyo_group_popping(puyo_board_t* board, char x, char y, bool* marked) {
   int index = x * PUYO_HEIGHT_ACT + y;
   if (marked[index]) {
     // We've been here already
     return;
   }
   marked[index] = true;
-  popping[index] = true;
+  board->popping_area[index] = true;
 
   puyo_t puyo_color = board->area[index];
   if (x > 0) {
@@ -218,10 +242,10 @@ void __puyo_group_popping(puyo_board_t* board, char x, char y, bool* marked, boo
     puyo_t left = board->area[left_index];
     if (left == puyo_color) {
       // expand left
-      __puyo_group_popping(board, x - 1, y, marked, popping);
+      __puyo_group_popping(board, x - 1, y, marked);
     }
     else if (left == PUYO_COLOR_GARBAGE) {
-      popping[left_index] = true;
+      board->popping_area[left_index] = true;
     }
   }
   if (x < PUYO_WIDTH - 1) {
@@ -229,10 +253,10 @@ void __puyo_group_popping(puyo_board_t* board, char x, char y, bool* marked, boo
     puyo_t right = board->area[right_index];
     if (right == puyo_color) {
       // expand right
-      __puyo_group_popping(board, x + 1, y, marked, popping);
+      __puyo_group_popping(board, x + 1, y, marked);
     }
     else if (right == PUYO_COLOR_GARBAGE) {
-      popping[right_index] = true;
+      board->popping_area[right_index] = true;
     }
   }
   if (y > 0) {
@@ -240,10 +264,10 @@ void __puyo_group_popping(puyo_board_t* board, char x, char y, bool* marked, boo
     puyo_t down = board->area[down_index];
     if (down == puyo_color) {
       // expand down
-      __puyo_group_popping(board, x, y - 1, marked, popping);
+      __puyo_group_popping(board, x, y - 1, marked);
     }
     else if (down == PUYO_COLOR_GARBAGE) {
-      popping[down_index] = true;
+      board->popping_area[down_index] = true;
     }
   }
   if (y < PUYO_HEIGHT - 1) {
@@ -251,34 +275,35 @@ void __puyo_group_popping(puyo_board_t* board, char x, char y, bool* marked, boo
     puyo_t up = board->area[up_index];
     if (up == puyo_color) {
       // expand up
-      __puyo_group_popping(board, x, y + 1, marked, popping);
+      __puyo_group_popping(board, x, y + 1, marked);
     }
     else if (up == PUYO_COLOR_GARBAGE) {
-      popping[up_index] = true;
+      board->popping_area[up_index] = true;
     }
   }
 }
 
-score_t puyo_pop_chain(puyo_board_t* board) {
+score_t puyo_pop_groups(puyo_board_t* board) {
   if (board == NULL) {
+    // TODO: make a method that checks all fields of board for malformedness
+    fprintf(stderr, "Called puyo_pop_grous on a NULL board\n");
     return 0;
-  } 
+  }
 
   bool marked[PUYO_WIDTH * PUYO_HEIGHT_ACT];
   SDL_zero(marked);
   Uint8 group_sizes[PUYO_WIDTH * PUYO_HEIGHT];
 
-  printf("here at least\n");
-
   for (char y = 0; y < PUYO_HEIGHT; y++) {
     for (char x = 0; x < PUYO_WIDTH; x++) {
-      group_sizes[x * PUYO_HEIGHT + y] = __puyo_count_group_size(board, x, y, marked);;
+      group_sizes[x * PUYO_HEIGHT + y] = __puyo_count_group_size(board, x, y, marked);
     }
   }
 
   SDL_zero(marked);
-  bool popping[PUYO_WIDTH * PUYO_HEIGHT_ACT];
-  SDL_zero(popping);
+  if (!(board->is_popping)) {
+    SDL_memset(board->popping_area, 0, sizeof(bool) * PUYO_WIDTH * PUYO_HEIGHT_ACT);
+  }
 
   Uint8 puyo_cleared = 0;
   Uint8 groups_cleared = 0;
@@ -288,7 +313,7 @@ score_t puyo_pop_chain(puyo_board_t* board) {
     for (char x = 0; x < PUYO_WIDTH; x++) {
       Uint8 group_size = group_sizes[x * PUYO_HEIGHT + y];
       if (group_size >= PUYO_GROUP_POP) {
-        __puyo_group_popping(board, x, y, marked, popping);
+        __puyo_group_popping(board, x, y, marked);
         
         puyo_cleared += group_size;
         groups_cleared += 1;
@@ -308,10 +333,83 @@ score_t puyo_pop_chain(puyo_board_t* board) {
   if (color_cleared[PUYO_COLOR_4]) { num_color_cleared++; }
   score_t color_bonus = PUYO_COLOR_MULTIPLIERS[num_color_cleared];
   score_t group_bonus = PUYO_GROUP_MULTIPLIERS[groups_cleared];
+  if (puyo_cleared) {
+    board->chain++;
+    board->is_popping = true;
+    printf("Chain count: %d\n", board->chain);
+  }
   // get chain from board state somewhere
-  score_t chain_bonus = PUYO_CHAIN_MULTIPLIERS[1];
+  score_t chain_bonus = PUYO_CHAIN_MULTIPLIERS[board->chain];
 
   score_t final_score = (10 * (score_t)puyo_cleared) * (color_bonus + group_bonus + chain_bonus);
 
   return final_score;
+}
+
+bool puyo_apply_pops(puyo_board_t* board) {
+  if (board == NULL) {
+    fprintf(stderr, "puyo_apply_pops called on a NULL board\n");
+    return false;
+  }
+
+  if (!board->is_popping) {
+    // If we should not pop puyos, don't
+    return false;
+  }
+
+  bool has_popped = false;
+
+  for (char x = 0; x < PUYO_WIDTH; x++) {
+    for (char y = 0; y < PUYO_HEIGHT_ACT; y++) {
+      int index = x * PUYO_HEIGHT_ACT + y;
+      if (board->popping_area[index]) {
+        board->area[index] = PUYO_COLOR_NONE;
+        has_popped = true;
+      }
+    }
+  }
+
+  board->is_popping = false;
+  return has_popped;
+}
+
+bool puyo_apply_gravity(puyo_board_t* board) {
+  if (board == NULL) {
+    fprintf(stderr, "puyo_apply_gravity called on a NULL board\n");
+    return false;
+  }
+
+  puyo_t new_col[PUYO_HEIGHT_ACT];
+  Uint8 i;
+  bool seen_nonempty;
+  bool did_shift = false;
+
+
+  for (char x = 0; x < PUYO_WIDTH; x++) {
+    i = 0;
+    seen_nonempty = false;
+
+    for (char y = 0; y < PUYO_HEIGHT_ACT; y++) {
+      int index = x * PUYO_HEIGHT_ACT + y;
+      puyo_t puyo_color = board->area[index];
+      if (puyo_color != PUYO_COLOR_NONE) {
+        seen_nonempty = true;
+        new_col[i] = puyo_color;
+        i++;
+      } else if (seen_nonempty) {
+        did_shift = true;
+      }
+    }
+
+    for (; i < PUYO_HEIGHT_ACT; i++) {
+      new_col[i] = PUYO_COLOR_NONE;
+    }
+
+    memcpy_s(
+      &(board->area[x * PUYO_HEIGHT_ACT]), PUYO_HEIGHT_ACT * sizeof(puyo_t), // dest
+      &new_col,                         PUYO_HEIGHT_ACT * sizeof(puyo_t)  // src
+    );
+  }
+
+  return did_shift;
 }

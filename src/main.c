@@ -100,6 +100,22 @@ int main_quit(void* data, SDL_Event event) {
 }
 
 void main_close(mainVars* globals) {
+	// Ideally, the logic to stop the runner is seperate from the main
+	// close logic.
+	// Maybe I need "close handlers"?
+	if (runner_stop_thread(globals->gamethread, globals->gamedata) != 0) {
+		fprintf(stderr, "Error stoping game thread! See above for more details\n");
+	}
+
+	runner_destroy(globals->gamedata);
+	globals->gamedata = NULL;
+
+	puyo_free_board(globals->board);
+	globals->board = NULL;
+	// Might want to split out next section into an unloadMedia method?
+	gameboard_destroy(globals->boarddata);
+	globals->boarddata = NULL;
+
 	ACGL_ih_deinit_keybinds(globals->keybinds);
 	globals->keybinds = NULL;
 	ACGL_ih_deinit_eventdata(globals->medata);
@@ -112,13 +128,6 @@ void main_close(mainVars* globals) {
 	globals->renderer = NULL;
 	SDL_DestroyWindow(globals->window);
 	globals->window = NULL;
-
-  puyo_free_board(globals->board);
-  globals->board = NULL;
-  // Might want to split out next section into an unloadMedia method?
-  gameboard_destroy(globals->boarddata);
-  globals->boarddata = NULL;
-  
 
 	IMG_Quit();
 	SDL_Quit();
@@ -138,7 +147,8 @@ int mainloop(mainVars* globals) {
 		fprintf(stderr, "Could not create background thread! SDL Error: %s\n", SDL_GetError());
 		return 1;
 	}
-	SDL_DetachThread(globals->gamethread);
+	// Apparently this is unsafe to do in conjunction with SDL_WaitThread
+	// SDL_DetachThread(globals->gamethread);
 
 
   while (globals->run && SDL_WaitEvent(&e) != 0) {
@@ -169,18 +179,7 @@ int mainloop(mainVars* globals) {
     }
   }
 
-
-	int to_return = 0;
-	
-	if (runner_stop_thread(globals->gamethread, globals->gamedata) != 0) {
-		fprintf(stderr, "Error stoping game thread! See above for more details\n");
-		to_return = 1;
-	}
-
-	runner_destroy(globals->gamedata);
-	globals->gamedata = NULL;
-
-	return to_return;
+	return 0;
 }
 
 int main(int argc, char** argv) {

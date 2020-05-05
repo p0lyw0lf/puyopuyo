@@ -147,24 +147,25 @@ void gameboard_contruct_gui(gb_data_t* gbdata) {
 }
 
 void gameboard_destroy(gb_data_t* gbdata) {
-  REQUIRES(gbdata != NULL);
-  if (gbdata->spritesheet != NULL) {
-    SDL_DestroyTexture(gbdata->spritesheet);
-    gbdata->spritesheet = NULL;
-  }
+  if (gbdata != NULL) {
+    if (gbdata->spritesheet != NULL) {
+      SDL_DestroyTexture(gbdata->spritesheet);
+      gbdata->spritesheet = NULL;
+    }
 
-  if (gbdata->clips != NULL) {
-    free(gbdata->clips);
-    gbdata->clips = NULL;
-  }
+    if (gbdata->clips != NULL) {
+      free(gbdata->clips);
+      gbdata->clips = NULL;
+    }
 
-  // board and gui should be managed further up, don't delete them
-  gbdata->gui = NULL;
-  gbdata->board = NULL;
-  //if (gbdata->gui != NULL) {
-  //  ACGL_gui_node_remove_all_children(gbdata->gui->root);
-  //}
-  free(gbdata);
+    // board and gui should be managed further up, don't delete them
+    gbdata->gui = NULL;
+    gbdata->board = NULL;
+    //if (gbdata->gui != NULL) {
+    //  ACGL_gui_node_remove_all_children(gbdata->gui->root);
+    //}
+    free(gbdata);
+  }
 }
 
 bool gameboard_background_render(SDL_Renderer* renderer, SDL_Rect location, void* data) {
@@ -224,15 +225,15 @@ void gameboard_render_falling(SDL_Renderer* renderer, SDL_Rect* location, puyo_b
   // Then draw in the current piece
   // Assume there are no overlaps or out-of-bounds (hopefully that's taken care of elsewhere)
   SDL_Rect rect;
-  rect.x = board->current_x*col_width + location->x;
-  rect.y = location->y + location->h - (board->current_y+1)*row_height; // board is drawn bottom up
+  rect.x = (int)rint((double)board->puyo1_x*col_width + (double)location->x);
+  rect.y = location->y + location->h - (int)rint(((double)board->puyo1_y+1)*row_height); // board is drawn bottom up
   rect.w = col_width;
   rect.h = row_height;
 
   // top is the place we rotate around
   //ss_render(renderer, spritesheet, clips, &rect, board->color_to_sprite[board->current_pair.top]);
 
-  switch (board->current_rot_state) {
+  switch (board->rot_state) {
     case ROT_LEFT:
       rect.x -= 1;
       break;
