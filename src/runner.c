@@ -23,23 +23,56 @@ int runner_mainloop(void* data) {
 
   SDL_UnlockMutex(grdata->board->mutex);
 
-  while (!unlocked_quit) {
+  int tempthing = 0;
+
+  while (true) {
     if (SDL_LockMutex(grdata->mutex) != 0) {
       fprintf(stderr, "Could not lock mutex in runner_mainloop! SDL_Error %s\n", SDL_GetError());
       return 1;
     }
-    unlocked_quit = grdata->quit;
-    SDL_UnlockMutex(grdata->mutex);
+    // quit right away if we are told to
+    if (grdata->quit) {
+      printf("Quitting right away, sir!\n");
+      SDL_UnlockMutex(grdata->mutex);
+      return 0;
+    }
 
     if (SDL_LockMutex(grdata->board->mutex) != 0) {
       fprintf(stderr, "Could not lock board mutex in runner_mainloop! SDL_Error %s\n", SDL_GetError());
       return 1;
     }
-    score_t new_score = puyo_pop_chain(grdata->board);
-    printf("%d\n", new_score);
-    grdata->board->score += new_score;
+    score_t new_score;
+
+    printf("%d\n", tempthing);
+    switch (tempthing) {
+    case 0:
+      new_score = puyo_pop_groups(grdata->board);
+      if (new_score) {
+        grdata->board->score += new_score;
+        printf("Got score %d\n", new_score);
+        tempthing = 1;
+      }
+      else {
+        grdata->board->chain = 0;
+      }
+      break;
+    case 1:
+      puyo_apply_pops(grdata->board);
+      puyo_mark_board_changed(grdata->board);
+      tempthing = 2;
+      break;
+    case 2:
+      puyo_apply_gravity(grdata->board);
+      puyo_mark_board_changed(grdata->board);
+      tempthing = 0;
+      break;
+    default:
+      tempthing = 0;
+      break;
+    }
 
     SDL_UnlockMutex(grdata->board->mutex);
+    SDL_UnlockMutex(grdata->mutex);
 
     SDL_Event event;
     SDL_zero(event);
@@ -50,8 +83,10 @@ int runner_mainloop(void* data) {
     SDL_PushEvent(&event);
 
     SDL_Delay(1000);
+    printf("Loop iteration finished\n");
   }
 
+  printf("UNREACHABLE?\n");
   return 0;
 }
 
@@ -85,7 +120,9 @@ int runner_stop_thread(SDL_Thread* thread, runnerData* grdata) {
 
   int result;
   // It's actually safe to pass a NULL value here according to SDL docs
+  printf("Waiting for thread\n");
   SDL_WaitThread(thread, &result);
+  printf("Joined thread successfully\n");
 
   return result;
 }
