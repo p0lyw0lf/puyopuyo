@@ -112,8 +112,10 @@ void gameboard_contruct_gui(gb_data_t* gbdata) {
   SDL_Renderer* renderer = gbdata->gui->renderer;
   //ACGL_gui_node_remove_all_children(gbdata->gui->root);
 
-
-  ACGL_gui_object_t* board_base = ACGL_gui_node_init(renderer, &gameboard_render, (void*)gbdata);
+  // Note that passing gameboard_destroy to this means that we have intrinsically
+  // tied gameboard state to gui state; destroying gui is now the only way to 
+  // properly free the gameboard
+  ACGL_gui_object_t* board_base = ACGL_gui_node_init(renderer, &gameboard_render, &gameboard_destroy, (void*)gbdata);
   if (board_base == NULL) {
     fprintf(stderr, "Error: could not create board gui node!\n");
     return;
@@ -131,10 +133,9 @@ void gameboard_contruct_gui(gb_data_t* gbdata) {
   ACGL_gui_node_add_child_front(gbdata->gui->root, board_base);
   gbdata->board->board_object = board_base;
 
-  // wow 4 bytes leaked soo scaary
   SDL_Color* blue = (SDL_Color*)malloc(sizeof(SDL_Color));
   blue->r = 0; blue->g = 0; blue->b = 255; blue->a = 255;
-  ACGL_gui_object_t* background = ACGL_gui_node_init(renderer, &color_rectangle_callback, (void*)blue);
+  ACGL_gui_object_t* background = ACGL_gui_node_init(renderer, &color_rectangle_callback, &SDL_free, (void*)blue);
   if (background == NULL) {
     fprintf(stderr, "Error: could not create background gui node!\n");
     ACGL_gui_node_remove_child(gbdata->gui->root, board_base);
@@ -313,6 +314,7 @@ bool gameboard_render(SDL_Renderer* renderer, SDL_Rect location, void* data) {
 
   if (SDL_LockMutex(gbdata->board->mutex) != 0) {
     fprintf(stderr, "Could not lock mutex in gameboard_render! SDL Error: %s\n", SDL_GetError());
+    return false;
   }
 
   gameboard_background_render(renderer, location, gbdata);

@@ -23,8 +23,6 @@ bool init(mainVars* globals) {
 		return false;
 	}
 
-	//globals->screenSurface = SDL_GetWindowSurface(globals->window);
-
 	globals->renderer = SDL_CreateRenderer(globals->window, -1, SDL_RENDERER_ACCELERATED);
 	if (globals->renderer == NULL) {
 		fprintf(stderr, "Renderer could not be created! SDL_Error: %s\n", SDL_GetError());
@@ -112,8 +110,8 @@ void main_close(mainVars* globals) {
 
 	puyo_free_board(globals->board);
 	globals->board = NULL;
-	// Might want to split out next section into an unloadMedia method?
-	gameboard_destroy(globals->boarddata);
+	// Already going to be freed when gui is destroyed
+	// gameboard_destroy(globals->boarddata);
 	globals->boarddata = NULL;
 
 	ACGL_ih_deinit_keybinds(globals->keybinds);
