@@ -56,8 +56,8 @@ bool init(mainVars* globals) {
 
 	globals->board = puyo_create_board();
 
-	globals->gamedata = NULL;
 	globals->boarddata = NULL;
+	globals->gamethread = NULL;
 	globals->run = true;
 
 	return true;
@@ -68,18 +68,18 @@ bool loadMedia(mainVars* globals) {
 	return globals->boarddata != NULL;
 }
 
-int refresh_screen(void* data, SDL_Event event) {
+int refresh_screen(SDL_Event event, void* data) {
 	mainVars* globals = (mainVars*)data;
 
-	if (globals->gamedata != NULL) {
-		if (SDL_LockMutex(globals->gamedata->mutex) != 0) {
-			fprintf(stderr, "Unable to obtain mutex in refresh_screen! SDL Error: %s\n", SDL_GetError());
+	if (globals->board != NULL) {
+		if (SDL_LockMutex(globals->board->mutex) != 0) {
+			fprintf(stderr, "Unable to obtain board mutex in refresh_screen! SDL Error: %s\n", SDL_GetError());
 			return 1;
 		}
 
-		globals->gamedata->board->board_has_changed = true;
+		globals->board->board_has_changed = true;
 
-		SDL_UnlockMutex(globals->gamedata->mutex);
+		SDL_UnlockMutex(globals->board->mutex);
 	}
 
   ACGL_gui_force_update(globals->gui);
@@ -89,7 +89,7 @@ int refresh_screen(void* data, SDL_Event event) {
 	return 0;
 }
 
-int main_quit(void* data, SDL_Event event) {
+int main_quit(SDL_Event event, void* data) {
 	mainVars* globals = (mainVars*)data;
 
 	globals->run = false;
@@ -98,15 +98,8 @@ int main_quit(void* data, SDL_Event event) {
 }
 
 void main_close(mainVars* globals) {
-	// Ideally, the logic to stop the runner is seperate from the main
-	// close logic.
-	// Maybe I need "close handlers"?
-	if (runner_stop_thread(globals->gamethread, globals->gamedata) != 0) {
-		fprintf(stderr, "Error stoping game thread! See above for more details\n");
-	}
-
-	runner_destroy(globals->gamedata);
-	globals->gamedata = NULL;
+	ACGL_thread_destroy(globals->gamethread);
+	globals->gamethread = NULL;
 
 	puyo_free_board(globals->board);
 	globals->board = NULL;
@@ -134,20 +127,23 @@ void main_close(mainVars* globals) {
 int mainloop(mainVars* globals) {
 	SDL_Event e;
 
-	globals->gamedata = runner_create(globals->board);
-
-	globals->gamethread = SDL_CreateThread(
-		&runner_mainloop,
-		"runner_mainloop",
-		globals->gamedata
+	globals->gamethread = ACGL_thread_create(
+		&runner_setup,
+		&runner_loop,
+		NULL,
+		1000,
+		(void*)runner_create(globals->board),
+		&runner_destroy
 	);
+
 	if (globals->gamethread == NULL) {
 		fprintf(stderr, "Could not create background thread! SDL Error: %s\n", SDL_GetError());
 		return 1;
 	}
-	// Apparently this is unsafe to do in conjunction with SDL_WaitThread
-	// SDL_DetachThread(globals->gamethread);
-
+	if (!ACGL_thread_start(globals->gamethread, "runner_mainloop")) {
+		fprintf(stderr, "Error starting runner_mainloop. See above\n");
+		return 1;
+	}
 
   while (globals->run && SDL_WaitEvent(&e) != 0) {
     switch (e.type) {
@@ -159,7 +155,6 @@ int mainloop(mainVars* globals) {
         break;
       case SDL_KEYUP:
       case SDL_KEYDOWN:
-        fprintf(stderr, "key pressed\n");
         ACGL_ih_handle_keyevent(e, globals->keybinds, globals->medata);
         break;
       case SDL_USEREVENT:
@@ -176,6 +171,11 @@ int mainloop(mainVars* globals) {
         break;
     }
   }
+
+	if (!ACGL_thread_stop(globals->gamethread)) {
+		fprintf(stderr, "Error stopping runner_mainloop. See above\n");
+		return 1;
+	}
 
 	return 0;
 }
