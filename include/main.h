@@ -8,6 +8,7 @@
 
 #include <acgl/gui.h>
 #include <acgl/inputhandler.h>
+#include <acgl/threads.h>
 #include "gameboard.h"
 #include "runner.h"
 #include "spritesheet.h"
@@ -36,8 +37,7 @@ struct mainVars{
   SDL_Window* window;
   SDL_Renderer* renderer;
   puyo_board_t* board;
-  runnerData* gamedata;
-  SDL_Thread* gamethread;
+  ACGL_thread_t* gamethread;
   gb_data_t* boarddata;
   ACGL_gui_t* gui;
   ACGL_ih_keybinds_t* keybinds;

@@ -7,17 +7,23 @@
 #include "puyo.h"
 #include "ipc.h"
 
-typedef struct runnerData runnerData;
-struct runnerData {
-  SDL_mutex* mutex;
-  puyo_board_t* board;
-  bool quit;
+typedef enum runnerStates runner_state_t;
+enum runnerStates {
+  READY,
+  POP_FLASHING,
+  POP_FALLING,
 };
 
-extern int runner_mainloop(void* data); // expects a pointer to runnerData, but SDL needs this format for threading function
+typedef struct runnerData runnerData;
+struct runnerData {
+  puyo_board_t* board;
+  runner_state_t state;
+};
+
+extern bool runner_setup(runnerData* data);
+extern bool runner_loop(runnerData* data);
 
 extern runnerData* runner_create(puyo_board_t* board);
-extern int runner_stop_thread(SDL_Thread* thread, runnerData* data);
 extern void runner_destroy(runnerData* data);
 
 #endif //GAMERUNNER_H
