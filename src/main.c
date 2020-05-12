@@ -1,8 +1,8 @@
 #include "main.h"
 
 // putting method definitions up here so they can be used
-int refresh_screen(void* data, SDL_Event event);
-int main_quit(void* data, SDL_Event event);
+int refresh_screen(SDL_Event event, void* data);
+int main_quit(SDL_Event event, void* data);
 
 
 bool init(mainVars* globals) {
