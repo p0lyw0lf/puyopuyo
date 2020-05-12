@@ -18,7 +18,7 @@ struct gb_data {
 
 extern gb_data_t* gameboard_load_media(ACGL_gui_t* gui, puyo_board_t* board);
 extern void gameboard_contruct_gui(gb_data_t* gbdata);
-extern void gameboard_destroy(gb_data_t* gbdata);
+extern void gameboard_destroy(void* gbdata);
 // this is where most of the magic happens in terms of rendering the game
 // oh boy is this going to be a long function
 extern bool gameboard_render(SDL_Renderer* renderer, SDL_Rect location, void* data);

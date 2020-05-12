@@ -1,6 +1,7 @@
 #include "runner.h"
 
-bool runner_setup(runnerData* grdata) {
+bool runner_setup(void* data) {
+  runnerData* grdata = (runnerData*)data;
   if (SDL_LockMutex(grdata->board->mutex) != 0) {
     fprintf(stderr, "Could not lock board mutex in runner_setup! SDL_Error %s\n", SDL_GetError());
     return false;
@@ -16,7 +17,8 @@ bool runner_setup(runnerData* grdata) {
   return true;
 }
 
-bool runner_loop(runnerData* grdata) {
+bool runner_loop(void* data) {
+  runnerData* grdata = (runnerData*)data;
   if (SDL_LockMutex(grdata->board->mutex) != 0) {
     fprintf(stderr, "Could not lock board mutex in runner_mainloop! SDL_Error %s\n", SDL_GetError());
     return 1;
@@ -73,7 +75,8 @@ runnerData* runner_create(puyo_board_t* board) {
   return data;
 }
 
-void runner_destroy(runnerData* data) {
+void runner_destroy(void* data) {
+  runnerData* grdata = (runnerData*)data;
   if (data != NULL) {
     // We are not in charge of data->board
     free(data);

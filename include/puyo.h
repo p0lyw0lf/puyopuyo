@@ -118,7 +118,9 @@ extern puyo_t puyo_get_random();
 // Gets a random pair.
 extern puyo_pair_t puyo_get_random_pair();
 // Checks if a puyo color is a "playable" puyo
-extern inline bool is_playable_puyo(puyo_t color);
+static inline bool is_playable_puyo(puyo_t puyo_color) {
+  return (puyo_color == PUYO_COLOR_1 || puyo_color == PUYO_COLOR_2 || puyo_color == PUYO_COLOR_3 || puyo_color == PUYO_COLOR_4);
+}
 
 // An (PUYO_WIDTH*PUYO_HEIGHT_ACT) array of puyo_t
 // forms the basic board. It is indexed by board[col*PUYO_HEIGHT_ACT+row]

@@ -192,10 +192,6 @@ puyo_pair_t puyo_get_random_pair() {
   return pair;
 }
 
-inline bool is_playable_puyo(puyo_t puyo_color) {
-  return (puyo_color == PUYO_COLOR_1 || puyo_color == PUYO_COLOR_2 || puyo_color == PUYO_COLOR_3 || puyo_color == PUYO_COLOR_4);
-}
-
 Uint8 __puyo_count_group_size(puyo_board_t* board, char x, char y, bool* marked) {
   Uint8 count = 1;
   int index = x * PUYO_HEIGHT_ACT + y;
@@ -405,9 +401,10 @@ bool puyo_apply_gravity(puyo_board_t* board) {
       new_col[i] = PUYO_COLOR_NONE;
     }
 
-    memcpy_s(
-      &(board->area[x * PUYO_HEIGHT_ACT]), PUYO_HEIGHT_ACT * sizeof(puyo_t), // dest
-      &new_col,                         PUYO_HEIGHT_ACT * sizeof(puyo_t)  // src
+    memcpy(
+      &(board->area[x * PUYO_HEIGHT_ACT]), // dest
+      &new_col,                            // src
+      PUYO_HEIGHT_ACT * sizeof(puyo_t)     // size
     );
   }
 

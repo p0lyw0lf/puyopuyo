@@ -20,10 +20,11 @@ struct runnerData {
   runner_state_t state;
 };
 
-extern bool runner_setup(runnerData* data);
-extern bool runner_loop(runnerData* data);
+// Actually expect runnerData*, need to be void* to supress gcc warning
+extern bool runner_setup(void* data);
+extern bool runner_loop(void* data);
 
 extern runnerData* runner_create(puyo_board_t* board);
-extern void runner_destroy(runnerData* data);
+extern void runner_destroy(void* data);
 
 #endif //GAMERUNNER_H

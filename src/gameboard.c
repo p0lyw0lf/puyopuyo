@@ -147,7 +147,8 @@ void gameboard_contruct_gui(gb_data_t* gbdata) {
   ACGL_gui_node_add_child_back(gbdata->gui->root, background);
 }
 
-void gameboard_destroy(gb_data_t* gbdata) {
+void gameboard_destroy(void* data) {
+  gb_data_t* gbdata = (gb_data_t*)data;
   if (gbdata != NULL) {
     if (gbdata->spritesheet != NULL) {
       SDL_DestroyTexture(gbdata->spritesheet);
