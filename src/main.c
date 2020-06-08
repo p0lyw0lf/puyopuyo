@@ -131,7 +131,7 @@ int mainloop(mainVars* globals) {
 		&runner_setup,
 		&runner_loop,
 		NULL,
-		1000,
+		333,
 		(void*)runner_create(globals->board),
 		&runner_destroy
 	);
@@ -172,7 +172,7 @@ int mainloop(mainVars* globals) {
     }
   }
 
-	if (!ACGL_thread_stop(globals->gamethread)) {
+	if (ACGL_thread_stop(globals->gamethread) != 0) {
 		fprintf(stderr, "Error stopping runner_mainloop. See above\n");
 		return 1;
 	}

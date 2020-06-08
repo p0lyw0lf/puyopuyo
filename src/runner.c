@@ -63,8 +63,6 @@ bool runner_loop(void* data) {
   event.user.data2 = NULL;
   SDL_PushEvent(&event);
 
-  printf("Loop iteration finished\n");
-
   return true;
 }
 
