@@ -30,11 +30,25 @@ find_package(sdl2-image CONFIG REQUIRED)
 #pkg_check_modules(ACGL REQUIRED acgl)
 add_subdirectory(ACGL)
 
+set(EXTRA_LIBS "")
+
+include(CheckLibraryExists)
+CHECK_LIBRARY_EXISTS(m rint "" HAVE_LIB_M) 
+
+if (HAVE_LIB_M)
+  set(EXTRA_LIBS ${EXTRA_LIBS} m)
+endif (HAVE_LIB_M)
+
 add_executable(${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES})
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 20)
 target_link_libraries(${PROJECT_NAME} PRIVATE acgl SDL2::SDL2main SDL2::SDL2 SDL2::SDL2_image)
 if (WIN32 AND (NOT MSVC))
     configure_file(ACGL/libacgl.dll libacgl.dll COPYONLY)
 endif()
+
+if (NOT MSVC)
+  target_link_libraries(${PROJECT_NAME} PRIVATE m)
+endif()
+
 target_include_directories(${PROJECT_NAME} PRIVATE "include/")
 target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC "ACGL/include/")
