@@ -31,6 +31,12 @@ bool __gameboard_is_gb_data_t(gb_data_t* gbdata) {
 }
 
 gb_data_t* gameboard_load_media(ACGL_gui_t* gui, puyo_board_t* board) {
+  SDL_Renderer* renderer = SDL_GetRenderer(gui->window);
+  if (renderer == NULL) {
+    fprintf(stderr, "Error: renderer not initialized before calling gameboard_load_media\n");
+    return NULL;
+  }
+
   if (gui == NULL) {
     fprintf(stderr, "Error: NULL gui passed in gameboard_load_media\n");
     return NULL;
@@ -55,7 +61,7 @@ gb_data_t* gameboard_load_media(ACGL_gui_t* gui, puyo_board_t* board) {
     return NULL;
   }
 
-  gbdata->spritesheet = ss_load(gui->renderer);
+  gbdata->spritesheet = ss_load(renderer);
   if (gbdata->spritesheet == NULL) {
     fprintf(stderr, "Error: gameboard could not load spritesheet image. More details above?\n");
     free(gbdata->clips);
@@ -72,8 +78,15 @@ gb_data_t* gameboard_load_media(ACGL_gui_t* gui, puyo_board_t* board) {
   return gbdata;
 }
 
-bool color_rectangle_callback(SDL_Renderer* renderer, SDL_Rect location, void* data) {
+bool color_rectangle_callback(SDL_Window* window, SDL_Rect location, void* data) {
+  REQUIRES(window != NULL);
   REQUIRES(data != NULL);
+  SDL_Renderer* renderer = SDL_GetRenderer(window);
+  if (renderer == NULL) {
+    fprintf(stderr, "Error: Window doesn't have associated renderer yet?\n");
+    return false;
+  }
+
   SDL_Color old_color, *new_color;
   new_color = (SDL_Color*)data;
   if (SDL_GetRenderDrawColor(renderer, &old_color.r, &old_color.g, &old_color.b, &old_color.a) != 0) {
@@ -108,14 +121,11 @@ void gameboard_contruct_gui(gb_data_t* gbdata) {
     return;
   }
 
-  // The gui really should be well constructed, idk
-  SDL_Renderer* renderer = gbdata->gui->renderer;
-  //ACGL_gui_node_remove_all_children(gbdata->gui->root);
-
+  ACGL_gui_t* gui = gbdata->gui;
   // Note that passing gameboard_destroy to this means that we have intrinsically
   // tied gameboard state to gui state; destroying gui is now the only way to 
   // properly free the gameboard
-  ACGL_gui_object_t* board_base = ACGL_gui_node_init(renderer, &gameboard_render, &gameboard_destroy, (void*)gbdata);
+  ACGL_gui_object_t* board_base = ACGL_gui_node_init(gui, &gameboard_render, &gameboard_destroy, (void*)gbdata);
   if (board_base == NULL) {
     fprintf(stderr, "Error: could not create board gui node!\n");
     return;
@@ -130,21 +140,21 @@ void gameboard_contruct_gui(gb_data_t* gbdata) {
   board_base->min_w = 60;
   board_base->max_w = 500;
 
-  ACGL_gui_node_add_child_front(gbdata->gui->root, board_base);
+  ACGL_gui_node_add_child_front(gui->root, board_base);
   gbdata->board->board_object = board_base;
 
   SDL_Color* blue = (SDL_Color*)malloc(sizeof(SDL_Color));
   blue->r = 0; blue->g = 0; blue->b = 255; blue->a = 255;
-  ACGL_gui_object_t* background = ACGL_gui_node_init(renderer, &color_rectangle_callback, &SDL_free, (void*)blue);
+  ACGL_gui_object_t* background = ACGL_gui_node_init(gui, &color_rectangle_callback, &SDL_free, (void*)blue);
   if (background == NULL) {
     fprintf(stderr, "Error: could not create background gui node!\n");
-    ACGL_gui_node_remove_child(gbdata->gui->root, board_base);
+    ACGL_gui_node_remove_child(gui->root, board_base);
     ACGL_gui_node_destroy(board_base);
     return;
   }
 
   // default settings are enough for the background
-  ACGL_gui_node_add_child_back(gbdata->gui->root, background);
+  ACGL_gui_node_add_child_back(gui->root, background);
 }
 
 void gameboard_destroy(void* data) {
@@ -170,17 +180,17 @@ void gameboard_destroy(void* data) {
   }
 }
 
-bool gameboard_background_render(SDL_Renderer* renderer, SDL_Rect location, void* data) {
+bool gameboard_background_render(SDL_Window* window, SDL_Rect location, void* data) {
   // I need to find a suitable background first lol
   SDL_Color* green = (SDL_Color*)malloc(sizeof(SDL_Color));
   green->r = 0; green->g = 255; green->b = 0; green->a = 255;
-  color_rectangle_callback(renderer, location, green);
+  color_rectangle_callback(window, location, green);
   free(green);
   return true;
 }
 
 void gameboard_render_board(SDL_Renderer* renderer, SDL_Rect location, gb_data_t* gbdata) {
-  REQUIRES(renderer != NULL);
+  REQUIRES(window != NULL);
   REQUIRES(gbdata != NULL);
 
   int col_width = location.w / PUYO_WIDTH;
@@ -221,7 +231,7 @@ void gameboard_render_board(SDL_Renderer* renderer, SDL_Rect location, gb_data_t
   }
 }
 
-void gameboard_render_falling(SDL_Renderer* renderer, SDL_Rect* location, puyo_board_t* board, SDL_Texture* spritesheet, SDL_Rect* clips) {
+void gameboard_render_falling(SDL_Window* window, SDL_Rect* location, puyo_board_t* board, SDL_Texture* spritesheet, SDL_Rect* clips) {
   int col_width = location->w / PUYO_WIDTH;
   int row_height = location->h / PUYO_HEIGHT;
   // Then draw in the current piece
@@ -307,9 +317,15 @@ void gameboard_render_upcoming(SDL_Renderer* renderer, SDL_Rect* location, puyo_
   }
 }
 
-bool gameboard_render(SDL_Renderer* renderer, SDL_Rect location, void* data) {
-  REQUIRES(renderer != NULL);
+bool gameboard_render(SDL_Window* window, SDL_Rect location, void* data) {
+  REQUIRES(window != NULL);
   REQUIRES(data != NULL);
+  
+  SDL_Renderer* renderer = SDL_GetRenderer(window);
+  if (renderer == NULL) {
+    fprintf(stderr, "Error: renderer not initialized when calling gameboard_render\n");
+    return false;
+  }
 
   gb_data_t* gbdata = (gb_data_t*)data;
 
@@ -318,7 +334,7 @@ bool gameboard_render(SDL_Renderer* renderer, SDL_Rect location, void* data) {
     return false;
   }
 
-  gameboard_background_render(renderer, location, gbdata);
+  gameboard_background_render(window, location, gbdata);
   gameboard_render_board(renderer, location, gbdata);
 
   SDL_UnlockMutex(gbdata->board->mutex);

@@ -109,9 +109,9 @@ struct puyo_board {
 };
 
 // Lookup tables for scoring
-const score_t PUYO_CHAIN_MULTIPLIERS[PUYO_MAX_CHAIN + 1];
-const score_t PUYO_COLOR_MULTIPLIERS[PUYO_NUM_COLORS + 1];
-const score_t PUYO_GROUP_MULTIPLIERS[PUYO_MAX_GROUP + 1];
+extern const score_t PUYO_CHAIN_MULTIPLIERS[PUYO_MAX_CHAIN + 1];
+extern const score_t PUYO_COLOR_MULTIPLIERS[PUYO_NUM_COLORS + 1];
+extern const score_t PUYO_GROUP_MULTIPLIERS[PUYO_MAX_GROUP + 1];
 
 // Gets a random puyo color
 extern puyo_t puyo_get_random();

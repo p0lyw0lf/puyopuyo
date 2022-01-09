@@ -21,11 +21,11 @@ extern void gameboard_contruct_gui(gb_data_t* gbdata);
 extern void gameboard_destroy(void* gbdata);
 // this is where most of the magic happens in terms of rendering the game
 // oh boy is this going to be a long function
-extern bool gameboard_render(SDL_Renderer* renderer, SDL_Rect location, void* data);
+extern bool gameboard_render(SDL_Window* window, SDL_Rect location, void* data);
 
-extern bool gameboard_puyo_render(SDL_Renderer* renderer, SDL_Rect location, void* data);
-extern bool gameboard_background_render(SDL_Renderer* renderer, SDL_Rect location, void* data);
-extern bool gameboard_upcomming_render(SDL_Renderer* renderer, SDL_Rect location, void* data);
+extern bool gameboard_puyo_render(SDL_Window* window, SDL_Rect location, void* data);
+extern bool gameboard_background_render(SDL_Window* window, SDL_Rect location, void* data);
+extern bool gameboard_upcomming_render(SDL_Window* window, SDL_Rect location, void* data);
 
 // And some internal stuff to check data structure consistency
 bool __gameboard_is_gb_data_t(gb_data_t* gbdata);

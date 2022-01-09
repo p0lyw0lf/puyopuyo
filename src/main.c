@@ -31,7 +31,7 @@ bool init(mainVars* globals) {
 
 	SDL_SetRenderDrawColor(globals->renderer, 0xFF, 0xFF, 0xFF, 0xFF);
 
-	globals->gui = ACGL_gui_init(globals->renderer);
+	globals->gui = ACGL_gui_init(globals->window);
 	if (globals->gui == NULL) {
 		fprintf(stderr, "Could not create gui! See previous error\n");
 		return false;
@@ -84,7 +84,7 @@ int refresh_screen(SDL_Event event, void* data) {
 
   ACGL_gui_force_update(globals->gui);
 	ACGL_gui_render(globals->gui);
-	SDL_RenderPresent(globals->gui->renderer);
+	SDL_RenderPresent(globals->renderer);
 
 	return 0;
 }
@@ -161,7 +161,7 @@ int mainloop(mainVars* globals) {
         switch (e.user.code) {
           case REFRESH_REQUEST:
             ACGL_gui_render(globals->gui);
-	          SDL_RenderPresent(globals->gui->renderer);
+	          SDL_RenderPresent(globals->renderer);
             break;
           default:
             break;
