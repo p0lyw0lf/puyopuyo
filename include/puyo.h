@@ -16,6 +16,8 @@
 #define PUYO_HEIGHT_HIDDEN 2
 #define PUYO_HEIGHT_ACT PUYO_HEIGHT + PUYO_HEIGHT_HIDDEN
 #define PUYO_MAX_CHAIN 15
+#define PUYO_MAX_GROUP 11
+#define PUYO_GROUP_POP 4
 
 enum PAIR_ROT_STATES {
   ROT_DOWN,   //    0
@@ -28,11 +30,11 @@ enum PAIR_ROT_STATES {
 };
 
 enum PUYO_COLOR_IDS {
-  PUYO_COLOR_1,
-  PUYO_COLOR_2,
-  PUYO_COLOR_3,
-  PUYO_COLOR_4,
-  PUYO_NUM_COLORS, // should be 4,
+  PUYO_COLOR_1 = 0,
+  PUYO_COLOR_2 = 1,
+  PUYO_COLOR_3 = 2,
+  PUYO_COLOR_4 = 3,
+  PUYO_NUM_COLORS = 4,
   PUYO_COLOR_NONE,
   PUYO_COLOR_GARBAGE,
   PUYO_COLOR_INDESTRUCTABLE,
@@ -41,12 +43,14 @@ enum PUYO_COLOR_IDS {
 
 typedef uint8_t puyo_t;
 typedef uint32_t score_t;
-typedef struct {
+typedef struct puyo_pair puyo_pair_t;
+struct puyo_pair {
   puyo_t top;
   puyo_t bot;
-} puyo_pair_t;
+};
 
-typedef struct {
+typedef struct puyo_board puyo_board_t;
+struct puyo_board {
   puyo_t* area;
   puyo_t* prev_area;
 
@@ -73,9 +77,11 @@ typedef struct {
   ACGL_gui_object_t* pairs_object;
 
   int color_to_sprite[PUYO_NUM_COLORS];
-} puyo_board_t;
+};
 
-const score_t PUYO_CHAIN_MULTIPLIERS[PUYO_MAX_CHAIN+1];
+const score_t PUYO_CHAIN_MULTIPLIERS[PUYO_MAX_CHAIN + 1];
+const score_t PUYO_COLOR_MULTIPLIERS[PUYO_NUM_COLORS + 1];
+const score_t PUYO_GROUP_MULTIPLIERS[PUYO_MAX_GROUP + 1];
 
 // Gets a random puyo color
 extern puyo_t puyo_get_random();

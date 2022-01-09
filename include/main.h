@@ -1,6 +1,7 @@
 #ifndef MAIN_H
 #define MAIN_H
 
+#define SDL_MAIN_HANDLED 1
 #include <SDL.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -28,7 +29,9 @@ enum KEY_CODES {
   NUM_KEY_CODES
 };
 
-typedef struct {
+typedef struct mainVars mainVars;
+
+struct mainVars{
   bool run;
   SDL_Window* window;
   SDL_Renderer* renderer;
@@ -39,7 +42,7 @@ typedef struct {
   ACGL_gui_t* gui;
   ACGL_ih_keybinds_t* keybinds;
   ACGL_ih_eventdata_t* medata;
-} mainVars;
+};
 
 extern bool init(mainVars* globals);
 extern bool loadMedia(mainVars* globals);
