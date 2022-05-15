@@ -60,18 +60,18 @@ puyo_board_t* puyo_create_board() {
     srand((unsigned)time(NULL));
 
     puyo_board_t* board = (puyo_board_t*)malloc(sizeof(puyo_board_t));
+    if (board == NULL) {
+        goto puyo_create_board_fail1;
+    }
     board->mutex = SDL_CreateMutex();
     if (board->mutex == NULL) {
         fprintf(stderr, "Error: could not create mutex. SDL Error: %s\n", SDL_GetError());
-        free(board);
-        return NULL;
+        goto puyo_create_board_fail2;
     }
     board->area = (puyo_t*)malloc(sizeof(puyo_t) * (PUYO_WIDTH * PUYO_HEIGHT_ACT));
     if (board->area == NULL) {
         fprintf(stderr, "Could not create board area!\n");
-        SDL_DestroyMutex(board->mutex);
-        free(board);
-        return NULL;
+        goto puyo_create_board_fail3;
     }
     for (char x = 0; x < PUYO_WIDTH; x++) {
         for (char y = 0; y < PUYO_HEIGHT_ACT; y++) {
@@ -81,10 +81,7 @@ puyo_board_t* puyo_create_board() {
     board->popping_area = (bool*)malloc(sizeof(bool) * (PUYO_WIDTH * PUYO_HEIGHT_ACT));
     if (board->popping_area == NULL) {
         fprintf(stderr, "Could not create board popping buffer!\n");
-        SDL_DestroyMutex(board->mutex);
-        free(board->area);
-        free(board);
-        return NULL;
+        goto puyo_create_board_fail4;
     }
 
     board->score = 0;
@@ -117,6 +114,15 @@ puyo_board_t* puyo_create_board() {
     board->color_to_sprite[PUYO_COLOR_4] = PUYO_YELLOW;
 
     return board;
+
+puyo_create_board_fail4:
+    free(board->area);
+puyo_create_board_fail3:
+    SDL_DestroyMutex(board->mutex);
+puyo_create_board_fail2:
+    free(board);
+puyo_create_board_fail1:
+    return NULL;
 }
 
 bool puyo_mark_board_changed(puyo_board_t* board) {
@@ -186,7 +192,7 @@ puyo_t puyo_get_random() {
 }
 
 puyo_pair_t puyo_get_random_pair() {
-    puyo_pair_t pair;
+    puyo_pair_t pair = {0, 0};
     pair.top = puyo_get_random();
     pair.bot = puyo_get_random();
     return pair;
@@ -288,7 +294,7 @@ score_t puyo_pop_groups(puyo_board_t* board) {
 
     bool marked[PUYO_WIDTH * PUYO_HEIGHT_ACT];
     SDL_zero(marked);
-    Uint8 group_sizes[PUYO_WIDTH * PUYO_HEIGHT];
+    Uint8 group_sizes[PUYO_WIDTH * PUYO_HEIGHT] = {0};
 
     for (char y = 0; y < PUYO_HEIGHT; y++) {
         for (char x = 0; x < PUYO_WIDTH; x++) {
@@ -375,7 +381,7 @@ bool puyo_apply_gravity(puyo_board_t* board) {
         return false;
     }
 
-    puyo_t new_col[PUYO_HEIGHT_ACT];
+    puyo_t new_col[PUYO_HEIGHT_ACT] = {0};
     Uint8 i;
     bool seen_nonempty;
     bool did_shift = false;

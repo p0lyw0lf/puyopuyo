@@ -29,6 +29,9 @@ SDL_Texture* ss_load(SDL_Renderer* renderer) {
 
 SDL_Rect* ss_split() {
     SDL_Rect* clips = (SDL_Rect*)malloc(SHEET_ROWS * SHEET_COLS * sizeof(SDL_Rect));
+    if (clips == NULL) {
+        return NULL;
+    }
 
     int i = 0;
     for (int y = 0; y < SHEET_ROWS; y++) {

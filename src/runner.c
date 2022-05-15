@@ -68,6 +68,9 @@ bool runner_loop(void* data) {
 
 runnerData* runner_create(puyo_board_t* board) {
     runnerData* data = (runnerData*)malloc(sizeof(runnerData));
+    if (data == NULL) {
+        return NULL;
+    }
     data->board = board;
     data->state = READY;
     return data;

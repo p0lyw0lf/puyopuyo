@@ -87,7 +87,8 @@ bool color_rectangle_callback(SDL_Window* window, SDL_Rect location, void* data)
         return false;
     }
 
-    SDL_Color old_color, * new_color;
+    SDL_Color old_color = {0, 0, 0, 0};
+    SDL_Color* new_color;
     new_color = (SDL_Color*)data;
     if (SDL_GetRenderDrawColor(renderer, &old_color.r, &old_color.g, &old_color.b, &old_color.a) != 0) {
         fprintf(stderr, "Error: could not determine previous renderer draw color! SDL_Error: %s\n", SDL_GetError());
@@ -191,10 +192,9 @@ void gameboard_destroy(void* data) {
 
 bool gameboard_background_render(SDL_Window* window, SDL_Rect location, void* data) {
     // I need to find a suitable background first lol
-    SDL_Color* green = (SDL_Color*)malloc(sizeof(SDL_Color));
-    green->r = 0; green->g = 255; green->b = 0; green->a = 255;
-    color_rectangle_callback(window, location, green);
-    free(green);
+    SDL_Color green = {0, 0, 0, 0};
+    green.r = 0; green.g = 255; green.b = 0; green.a = 255;
+    color_rectangle_callback(window, location, &green);
     return true;
 }
 
@@ -207,7 +207,7 @@ void gameboard_render_board(SDL_Renderer* renderer, SDL_Rect location, gb_data_t
     puyo_board_t* board = gbdata->board;
 
     // Board background has already been drawn, place existing puyos on top
-    SDL_Rect rect;
+    SDL_Rect rect = {0};
     rect.w = col_width;
     rect.h = row_height;
     for (char y = 0; y < PUYO_HEIGHT; y++) {
@@ -246,7 +246,7 @@ void gameboard_render_falling(SDL_Window* window, SDL_Rect* location, puyo_board
     int row_height = location->h / PUYO_HEIGHT;
     // Then draw in the current piece
     // Assume there are no overlaps or out-of-bounds (hopefully that's taken care of elsewhere)
-    SDL_Rect rect;
+    SDL_Rect rect = {0};
     rect.x = (int)rint((double)board->puyo1_x * col_width + (double)location->x);
     rect.y = location->y + location->h - (int)rint(((double)board->puyo1_y + 1) * row_height); // board is drawn bottom up
     rect.w = col_width;
@@ -280,7 +280,7 @@ void gameboard_render_upcoming(SDL_Renderer* renderer, SDL_Rect* location, puyo_
     if (board->pairs_have_changed) {
         // clear area surrouding current piece in a 5x5 grid to account for
         // every possible previous location/rotation
-        SDL_Rect rect;
+        SDL_Rect rect = {0};
         /*for (int x=board->current_x-2; x<board->current_x+3; x++) {
           if (x < 0) { continue; }
           if (x >= PUYO_WIDTH) { break; }
