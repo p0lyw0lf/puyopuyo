@@ -25,34 +25,34 @@ extern void ss_render(SDL_Renderer* renderer, SDL_Texture* spritesheet, SDL_Rect
 
 // Sprite ID calculator.
 enum PUYO_IDS {
-  // Main block of colored puyo values
-	PUYO_RED =    0*SHEET_COLS,
-	PUYO_GREEN =  1*SHEET_COLS,
-	PUYO_BLUE =   2*SHEET_COLS,
-	PUYO_YELLOW = 3*SHEET_COLS,
-	PUYO_PURPLE = 4*SHEET_COLS,
-  PUYO_PINK =   5*SHEET_COLS,
-  PUYO_CYAN =   6*SHEET_COLS,
-  // Modifiers, can be added in any combination
-	PUYO_DOWN =   0b0001,
-	PUYO_UP =     0b0010,
-	PUYO_RIGHT =  0b0100,
-	PUYO_LEFT =   0b1000,
-  PUYO_CRYSTAL = 7*SHEET_COLS,
+	// Main block of colored puyo values
+	PUYO_RED = 0 * SHEET_COLS,
+	PUYO_GREEN = 1 * SHEET_COLS,
+	PUYO_BLUE = 2 * SHEET_COLS,
+	PUYO_YELLOW = 3 * SHEET_COLS,
+	PUYO_PURPLE = 4 * SHEET_COLS,
+	PUYO_PINK = 5 * SHEET_COLS,
+	PUYO_CYAN = 6 * SHEET_COLS,
+	// Modifiers, can be added in any combination
+	PUYO_DOWN = 0b0001,
+	PUYO_UP = 0b0010,
+	PUYO_RIGHT = 0b0100,
+	PUYO_LEFT = 0b1000,
+	PUYO_CRYSTAL = 7 * SHEET_COLS,
 
-  // Also modifiers but are exclusive
-  PUYO_SURPRISED = 17,
-  PUYO_EYES = 18,
-  PUYO_GREY = 20,
+	// Also modifiers but are exclusive
+	PUYO_SURPRISED = 17,
+	PUYO_EYES = 18,
+	PUYO_GREY = 20,
 
-  // Now for special ids that can't be modified
-  PUYO_GARBAGE_BLOB =   0*SHEET_COLS + 19,
-  PUYO_GARBAGE_SINGLE = 15*SHEET_COLS + 20,
-  PUYO_GARBAGE_LINE =   15*SHEET_COLS + 19,
-  PUYO_GARBAGE_ROCK =   14*SHEET_COLS + 20,
-  PUYO_GARBAGE_STAR =   14*SHEET_COLS + 19,
-  PUYO_GARBAGE_MOON =   14*SHEET_COLS + 18,
-  PUYO_GARBAGE_GROWN =  14*SHEET_COLS + 17,
+	// Now for special ids that can't be modified
+	PUYO_GARBAGE_BLOB = 0 * SHEET_COLS + 19,
+	PUYO_GARBAGE_SINGLE = 15 * SHEET_COLS + 20,
+	PUYO_GARBAGE_LINE = 15 * SHEET_COLS + 19,
+	PUYO_GARBAGE_ROCK = 14 * SHEET_COLS + 20,
+	PUYO_GARBAGE_STAR = 14 * SHEET_COLS + 19,
+	PUYO_GARBAGE_MOON = 14 * SHEET_COLS + 18,
+	PUYO_GARBAGE_GROWN = 14 * SHEET_COLS + 17,
 };
 
 #endif //SPRITESHEET_H

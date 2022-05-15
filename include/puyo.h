@@ -20,92 +20,92 @@
 #define PUYO_GROUP_POP 4
 
 enum PAIR_ROT_STATES {
-  ROT_DOWN,   //    0
-              //    o
-  ROT_LEFT,   // 1o
-              //    o
-  ROT_UP,     //    2
-              //
-  ROT_RIGHT,  // o3
-  ROT_LOCKING,
-  // The following states are for when you are in a column,
-  // and tapping rotate twice will flip the puyo around
-  ROT_DOWN_LEFT,
-  ROT_DOWN_RIGHT,
-  ROT_UP_LEFT,
-  ROT_UP_RIGHT
+	ROT_DOWN,   //    0
+				//    o
+	ROT_LEFT,   // 1o
+	            //    o
+	ROT_UP,     //    2
+	            //
+	ROT_RIGHT,  // o3
+	ROT_LOCKING,
+	// The following states are for when you are in a column,
+	// and tapping rotate twice will flip the puyo around
+	ROT_DOWN_LEFT,
+	ROT_DOWN_RIGHT,
+	ROT_UP_LEFT,
+	ROT_UP_RIGHT
 };
 
 // All the possible types of puyo
 enum PUYO_COLOR_IDS {
-  PUYO_COLOR_1 = 0,
-  PUYO_COLOR_2 = 1,
-  PUYO_COLOR_3 = 2,
-  PUYO_COLOR_4 = 3,
-  PUYO_NUM_COLORS = 4,
-  PUYO_COLOR_NONE,
-  PUYO_COLOR_GARBAGE,
-  PUYO_COLOR_INDESTRUCTABLE,
-  PUYO_TOTAL_COLOR_IDS,
+	PUYO_COLOR_1 = 0,
+	PUYO_COLOR_2 = 1,
+	PUYO_COLOR_3 = 2,
+	PUYO_COLOR_4 = 3,
+	PUYO_NUM_COLORS = 4,
+	PUYO_COLOR_NONE,
+	PUYO_COLOR_GARBAGE,
+	PUYO_COLOR_INDESTRUCTABLE,
+	PUYO_TOTAL_COLOR_IDS,
 };
 
 typedef enum PUYO_COLOR_IDS puyo_t;
 typedef uint32_t score_t;
 typedef struct puyo_pair puyo_pair_t;
 struct puyo_pair {
-  puyo_t top;
-  puyo_t bot;
+	puyo_t top;
+	puyo_t bot;
 };
 
 typedef struct puyo_board puyo_board_t;
 struct puyo_board {
-  // PUYO_WIDTH * PUYO_HEIGHT_ACT array representing the current puyos on the board
-  // organized by (0,0) is the bottom left corner, iterating through it goes up
-  // columns, then right in rows
-  puyo_t* area;
+	// PUYO_WIDTH * PUYO_HEIGHT_ACT array representing the current puyos on the board
+	// organized by (0,0) is the bottom left corner, iterating through it goes up
+	// columns, then right in rows
+	puyo_t* area;
 
-  // Current score associated with the board
-  score_t score;
-  // Number of incoming garbage particles
-  score_t incoming_garbage;
-  // Current length of the chain. 0 if no chain going off
-  Uint8 chain;
+	// Current score associated with the board
+	score_t score;
+	// Number of incoming garbage particles
+	score_t incoming_garbage;
+	// Current length of the chain. 0 if no chain going off
+	Uint8 chain;
 
-  // puyos in the falling pair
-  puyo_pair_t current_pair;
-  // the rotation state of the falling pair
-  enum PAIR_ROT_STATES rot_state;
-  // Coordinates of where to render the falling pair on the board.
-  // Uses same coordinate scale as `area`
-  float puyo1_x, puyo1_y, puyo2_x, puyo2_y;
+	// puyos in the falling pair
+	puyo_pair_t current_pair;
+	// the rotation state of the falling pair
+	enum PAIR_ROT_STATES rot_state;
+	// Coordinates of where to render the falling pair on the board.
+	// Uses same coordinate scale as `area`
+	float puyo1_x, puyo1_y, puyo2_x, puyo2_y;
 
-  // Upcoming pairs
-  puyo_pair_t next_pair;
-  puyo_pair_t next_next_pair;
+	// Upcoming pairs
+	puyo_pair_t next_pair;
+	puyo_pair_t next_next_pair;
 
-  // Flag telling if we are in a state where puyos are popping
-  bool is_popping;
-  // Mask telling which puyos are currently popping, if they are
-  bool* popping_area;
-  // Counter for how long we've been popping the current batch of puyos
-  Uint16 popping_counter;
+	// Flag telling if we are in a state where puyos are popping
+	bool is_popping;
+	// Mask telling which puyos are currently popping, if they are
+	bool* popping_area;
+	// Counter for how long we've been popping the current batch of puyos
+	Uint16 popping_counter;
 
-  // For graphics use only, so we don't have to
-  // redraw everything every time
-  bool board_has_changed;
-  bool pairs_have_changed;
-  // A mutex for this object
-  SDL_mutex* mutex;
+	// For graphics use only, so we don't have to
+	// redraw everything every time
+	bool board_has_changed;
+	bool pairs_have_changed;
+	// A mutex for this object
+	SDL_mutex* mutex;
 
-  // I was trying to avoid putting graphics stuff in here,
-  // but I think these are necessary. These are the objects
-  // responsible for rendering the board. Useful to be kept
-  // with this object for telling whether they need a re-render
-  ACGL_gui_object_t* board_object;
-  ACGL_gui_object_t* pairs_object;
+	// I was trying to avoid putting graphics stuff in here,
+	// but I think these are necessary. These are the objects
+	// responsible for rendering the board. Useful to be kept
+	// with this object for telling whether they need a re-render
+	ACGL_gui_object_t* board_object;
+	ACGL_gui_object_t* pairs_object;
 
-  // Lookup table to get a sprite based on a puyo_t color
-  int color_to_sprite[PUYO_NUM_COLORS];
+	// Lookup table to get a sprite based on a puyo_t color
+	int color_to_sprite[PUYO_NUM_COLORS];
 };
 
 // Lookup tables for scoring
@@ -119,7 +119,7 @@ extern puyo_t puyo_get_random();
 extern puyo_pair_t puyo_get_random_pair();
 // Checks if a puyo color is a "playable" puyo
 static inline bool is_playable_puyo(puyo_t puyo_color) {
-  return (puyo_color == PUYO_COLOR_1 || puyo_color == PUYO_COLOR_2 || puyo_color == PUYO_COLOR_3 || puyo_color == PUYO_COLOR_4);
+	return (puyo_color == PUYO_COLOR_1 || puyo_color == PUYO_COLOR_2 || puyo_color == PUYO_COLOR_3 || puyo_color == PUYO_COLOR_4);
 }
 
 // An (PUYO_WIDTH*PUYO_HEIGHT_ACT) array of puyo_t

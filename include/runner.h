@@ -9,15 +9,15 @@
 
 typedef enum runnerStates runner_state_t;
 enum runnerStates {
-  READY,
-  POP_FLASHING,
-  POP_FALLING,
+	READY,
+	POP_FLASHING,
+	POP_FALLING,
 };
 
 typedef struct runnerData runnerData;
 struct runnerData {
-  puyo_board_t* board;
-  runner_state_t state;
+	puyo_board_t* board;
+	runner_state_t state;
 };
 
 // Actually expect runnerData*, need to be void* to supress gcc warning

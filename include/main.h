@@ -19,29 +19,29 @@
 #define SCREEN_NAME "PuyoPuyo"
 
 enum KEY_CODES {
-  KEY_UP, // SDL_SCANCODE_UP;
-  KEY_MOVE_LEFT, // SDL_SCANCODE_LEFT;
-  KEY_DOWN, // SDL_SCANCODE_DOWN;
-  KEY_MOVE_RIGHT, // SDL_SCANCODE_RIGHT;
-  KEY_ROT_LEFT, // SDL_SCANCODE_Z;
-  KEY_ROT_RIGHT, // SDL_SCANCODE_X;
-  KEY_ENTER, // SDL_SCANCODE_RETURN;
-  KEY_ESC, // SDL_SCANCODE_ESCAPE;
-  NUM_KEY_CODES
+	KEY_UP, // SDL_SCANCODE_UP;
+	KEY_MOVE_LEFT, // SDL_SCANCODE_LEFT;
+	KEY_DOWN, // SDL_SCANCODE_DOWN;
+	KEY_MOVE_RIGHT, // SDL_SCANCODE_RIGHT;
+	KEY_ROT_LEFT, // SDL_SCANCODE_Z;
+	KEY_ROT_RIGHT, // SDL_SCANCODE_X;
+	KEY_ENTER, // SDL_SCANCODE_RETURN;
+	KEY_ESC, // SDL_SCANCODE_ESCAPE;
+	NUM_KEY_CODES
 };
 
 typedef struct mainVars mainVars;
 
-struct mainVars{
-  bool run;
-  SDL_Window* window;
-  SDL_Renderer* renderer;
-  puyo_board_t* board;
-  ACGL_thread_t* gamethread;
-  gb_data_t* boarddata;
-  ACGL_gui_t* gui;
-  ACGL_ih_keybinds_t* keybinds;
-  ACGL_ih_eventdata_t* medata;
+struct mainVars {
+	bool run;
+	SDL_Window* window;
+	SDL_Renderer* renderer;
+	puyo_board_t* board;
+	ACGL_thread_t* gamethread;
+	gb_data_t* boarddata;
+	ACGL_gui_t* gui;
+	ACGL_ih_keybinds_t* keybinds;
+	ACGL_ih_eventdata_t* medata;
 };
 
 extern bool init(mainVars* globals);
